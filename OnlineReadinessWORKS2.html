@@ -1,0 +1,753 @@
+<html><head>
+<meta charset="utf-8">
+<title>Online Learning Readiness Self Assessment</title>
+<link rel="stylesheet" type="text/css" href="ols.css">
+</head>
+<style>
+.score
+{
+   margin-top:5px;
+   margin-bottom:5px;
+}
+
+.bar
+{
+    width: 500px;
+	height:40px;
+	background:linear-gradient(to right, red, orange, yellow, green);
+	border: 1px solid red;
+}
+
+.stick
+{
+	height:35px;
+	width:0px;
+	margin-left:50px;
+	border: 2px solid blue;
+}
+
+.score_band
+{
+    float: left;
+	text-align:center;
+	border-left: 1px solid black;
+	padding-top: 3px;
+}
+
+body
+{
+	font-family: Arial, Helvetica, sans-serif;
+}
+label
+{
+	background:yellow;
+}
+
+table {
+    border-collapse: collapse;
+	margin: auto 25px auto 25px;
+}
+
+table, td, th {
+    border: 1px solid #004c97;
+}
+td
+{
+	padding: 5px;
+}
+
+th {
+     border: 1px solid white;
+     background-color: #004c97;
+     color: white;
+	 text-align: center;
+	 padding: 4px 0 4px 0;
+ }
+
+ /*
+tr:nth-child(even) {background: #CCC}
+tr:nth-child(odd) {background: #FFF}
+*/
+tr:hover{background: #ddd}
+
+h1{
+	color: #004c97;
+}
+
+#directions {
+    border-radius: 25px;
+    border: 2px solid #004c97;
+    padding: 10px; 
+	margin: 10px 25px 15px 25px;
+}
+
+.button {
+    background-color: #004c97; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 20px;
+    cursor: pointer;
+	border-radius: 8px;
+}
+
+#footer
+{
+	margin: 10px 25px 15px 25px;
+}
+
+#results
+{
+	margin: auto 25px auto 25px;
+}
+</style>
+
+<script>
+$(window).on('load', function(){
+	$('#results').eq(0).hide();
+});
+
+$('#SurveyForm').on('submit', function(e){
+    e.preventDefault();
+
+	$('#SurveyForm').hide();
+	$('#form_header').hide();
+	$('#directions').hide();
+	
+	var score = 0;
+	var cscore = getScore('#cs');
+	var lscore = getScore('#il');
+	var dscore = getScore('#dl');
+	var nscore = getScore('#nfo');
+	var ascore = getScore('#as');
+	
+	//Calculate scores
+	$ols = $(':radio').filter(':checked');  //Overall learning score
+	$ols.each(function(){score += parseInt($(this).val());});
+	
+	//Populate scores in the place holders
+	$('#').text(score);
+	$('#cs_score').text(cscore.toFixed(2)); 
+	$('#il_score').text(lscore.toFixed(2));  
+	$('#dl_score').text(dscore.toFixed(2));
+	$('#nfo_score').text(nscore.toFixed(2));  
+	$('#as_score').text(ascore.toFixed(2));
+	
+	//Generate color score scales and gauge indicators 
+	var scale = [[0, 178, 190, 202, 225],
+	[0, 4.15, 4.63, 5.00, 5.00],
+	[0, 3.76, 4.12, 4.57, 5.00],
+	[0, 3.40, 3.86, 4.32, 5.00],
+	[0, 3.59, 3.85, 4.14, 5.00]];
+	
+	var scoreNames = ['#ols_scale', '#cs_scale', '#il_scale', '#dl_scale', '#as_scale'];
+	var bar_width = $('.bar').eq(0).width();
+
+	for(var i = 0; i < scoreNames.length; i++)
+	   createScoreLabels(scoreNames[i], scale[i], bar_width/4);	
+
+	var m = 0;
+	m = findMargin(score, scale[0], bar_width);
+	$('#ols_scale .stick').css('margin-left', m);
+
+	m = findMargin(cscore, scale[1], bar_width);
+	$('#cs_scale .stick').css('margin-left', m);
+
+	m = findMargin(lscore, scale[2], bar_width);
+	$('#il_scale .stick').css('margin-left', m);
+
+	m = findMargin(dscore, scale[3], bar_width);
+	$('#dl_scale .stick').css('margin-left', m);
+
+	m = findMargin(ascore, scale[4], bar_width);
+	$('#as_scale .stick').css('margin-left', m);
+	
+	$('#results').eq(0).show();
+});
+
+function getScore(id)
+{
+	var choicesPerGroup = 5;
+	var s = 0;
+	$c = $(id + ' :radio').filter(':checked');
+	$all = $(id + ' :radio');
+	$c.each(function(){s += parseInt($(this).val());});
+	
+	return $c.length === 0 ? 0:s/$all.length*choicesPerGroup;
+}
+
+function findMargin(score, scale, w)
+{
+	if (score == scale[4]) { return 0.99*w;}
+	
+	for(var i = 0; i < 4; i++)
+    {
+		if(scale[i+1] == scale[i])
+			return 0.99*w;
+		else if(score >= scale[i] && score < scale[i+1])
+			return w/4*(i + (score - scale[i])/(scale[i+1]-scale[i]));
+	}	
+	
+	return 0;
+};
+
+function createScoreLabels(scoreName, scale, w)
+{
+    var lower, upper, band;
+	
+	for(var i = 0; i < scale.length - 1; i++)
+	{
+		$newItem = $('<div></div>');
+		$(scoreName).children(':last').append($newItem);
+		$newItem.addClass('score_band');
+		if( i != scale.length - 2) {
+			if( scoreName != '#ols_scale'){
+				upper = (scale[i+1] - 0.01).toFixed(2);
+				lower = scale[i].toFixed(2);
+			}
+			else{
+				upper = scale[i+1] - 1;
+				lower = scale[i];
+			}
+		}
+		else{
+			if( scoreName != '#ols_scale'){
+				upper = scale[i+1].toFixed(2); lower = scale[i].toFixed(2);}
+			else{
+				upper = scale[i+1]; lower = scale[i];
+			}
+		}
+		
+		if(lower == 0) lower = Math.floor(lower);
+		
+		band = lower + " - " + upper;
+		if (lower == 5 && upper == 5) band = 5;
+		
+		$newItem.text(band);
+		$newItem.width(0.98*w);
+	}
+}
+
+</script>
+
+
+
+
+
+<body>
+<center>
+<h1 id="form_header">Are you Ready for Online Learning?</h1>
+<h3>Review your Online Learning Readiness</a> by completing the below questionnaire </h3>
+</center>
+<div id="directions">
+<p><b>Directions:</b> Use this self-assessment to determine your readiness for online learning. The following four characteristics are common for successful online students:</p>
+
+<ul>
+  <li>Basic technical and academic skills</li>
+  <li>Ability to study independently</li>
+  <li>Good organizational skills</li>
+  <li>Willing to devote the same amount of time and effort as a face-to-face course</li>
+</ul>
+
+<p>To get a good idea of your chances for success as an online student, rate how well each item below describes yourself. The following items measure your ability to perform different tasks. 
+There are no right or wrong answers so your first reaction is usually best. Please do not omit any items. 
+Rate how well each item describes you by selecting the button in the correct column for each item.
+</p>
+</div>
+
+<form name="SurveyForm" id="SurveyForm">
+<div id="cs">
+<table width="74%">
+
+	<tbody><tr valign="center">
+		<th align="left">Computer Skills</th>
+		<th width="10%"><span class="agree-disagree">Strongly Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Neither Agree nor Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Agree</span></th>
+		<th width="10%"><span class="agree-disagree">Strongly Agree</span></th>
+	</tr>
+<tr>
+<td>I am capable of learning new technologies.</td>
+<td><center><input type="radio" name="c1" value="1"></center></td>
+<td><center><input type="radio" name="c1" value="2"></center></td>
+<td><center><input type="radio" name="c1" value="3"></center></td>
+<td><center><input type="radio" name="c1" value="4"></center></td>
+<td><center><input type="radio" name="c1" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of sending and receiving e-mail.</td>
+<td><center><input type="radio" name="c2" value="1"></center></td>
+<td><center><input type="radio" name="c2" value="2"></center></td>
+<td><center><input type="radio" name="c2" value="3"></center></td>
+<td><center><input type="radio" name="c2" value="4"></center></td>
+<td><center><input type="radio" name="c2" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of attaching files to an e-mail message.</td>
+<td><center><input type="radio" name="c3" value="1"></center></td>
+<td><center><input type="radio" name="c3" value="2"></center></td>
+<td><center><input type="radio" name="c3" value="3"></center></td>
+<td><center><input type="radio" name="c3" value="4"></center></td>
+<td><center><input type="radio" name="c3" value="5"></center></td>
+</tr>
+<tr>
+<td>I am a competent Internet browser.</td>
+<td><center><input type="radio" name="c4" value="1"></center></td>
+<td><center><input type="radio" name="c4" value="2"></center></td>
+<td><center><input type="radio" name="c4" value="3"></center></td>
+<td><center><input type="radio" name="c4" value="4"></center></td>
+<td><center><input type="radio" name="c4" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of using standard word processing software.</td>
+<td><center><input type="radio" name="c5" value="1"></center></td>
+<td><center><input type="radio" name="c5" value="2"></center></td>
+<td><center><input type="radio" name="c5" value="3"></center></td>
+<td><center><input type="radio" name="c5" value="4"></center></td>
+<td><center><input type="radio" name="c5" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of managing files on a computer.</td>
+<td><center><input type="radio" name="c6" value="1"></center></td>
+<td><center><input type="radio" name="c6" value="2"></center></td>
+<td><center><input type="radio" name="c6" value="3"></center></td>
+<td><center><input type="radio" name="c6" value="4"></center></td>
+<td><center><input type="radio" name="c6" value="5"></center></td>
+</tr>
+<tr>
+<td>I can download new software when necessary. </td>
+<td><center><input type="radio" name="c7" value="1"></center></td>
+<td><center><input type="radio" name="c7" value="2"></center></td>
+<td><center><input type="radio" name="c7" value="3"></center></td>
+<td><center><input type="radio" name="c7" value="4"></center></td>
+<td><center><input type="radio" name="c7" value="5"></center></td>
+</tr>
+<tr>
+<td>I can install new software when necessary.</td>
+<td><center><input type="radio" name="c8" value="1"></center></td>
+<td><center><input type="radio" name="c8" value="2"></center></td>
+<td><center><input type="radio" name="c8" value="3"></center></td>
+<td><center><input type="radio" name="c8" value="4"></center></td>
+<td><center><input type="radio" name="c8" value="5"></center></td>
+</tr>
+<tr>
+<td>I can copy and paste text using a computer.</td>
+<td><center><input type="radio" name="c9" value="1"></center></td>
+<td><center><input type="radio" name="c9" value="2"></center></td>
+<td><center><input type="radio" name="c9" value="3"></center></td>
+<td><center><input type="radio" name="c9" value="4"></center></td>
+<td><center><input type="radio" name="c9" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of using discussion boards online.</td>
+<td><center><input type="radio" name="c10" value="1"></center></td>
+<td><center><input type="radio" name="c10" value="2"></center></td>
+<td><center><input type="radio" name="c10" value="3"></center></td>
+<td><center><input type="radio" name="c10" value="4"></center></td>
+<td><center><input type="radio" name="c10" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of using chat rooms online.</td>
+<td><center><input type="radio" name="c11" value="1"></center></td>
+<td><center><input type="radio" name="c11" value="2"></center></td>
+<td><center><input type="radio" name="c11" value="3"></center></td>
+<td><center><input type="radio" name="c11" value="4"></center></td>
+<td><center><input type="radio" name="c11" value="5"></center></td>
+</tr>
+</tbody></table>
+</div>
+
+<div id="il">
+<table width="74%">
+	<tbody><tr valign="center">
+		<th align="left">Independent Learning</th>
+		<th width="10%"><span class="agree-disagree">Strongly Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Neither Agree nor Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Agree</span></th>
+		<th width="10%"><span class="agree-disagree">Strongly Agree</span></th>
+	</tr>
+<tr>
+<td>I am capable of prioritizing my responsibilities.</td>
+<td><center><input type="radio" name="c12" value="1"></center></td>
+<td><center><input type="radio" name="c12" value="2"></center></td>
+<td><center><input type="radio" name="c12" value="3"></center></td>
+<td><center><input type="radio" name="c12" value="4"></center></td>
+<td><center><input type="radio" name="c12" value="5"></center></td>
+</tr>
+<tr>
+<td>I am a good time manager.</td>
+<td><center><input type="radio" name="c13" value="1"></center></td>
+<td><center><input type="radio" name="c13" value="2"></center></td>
+<td><center><input type="radio" name="c13" value="3"></center></td>
+<td><center><input type="radio" name="c13" value="4"></center></td>
+<td><center><input type="radio" name="c13" value="5"></center></td>
+</tr>
+<tr>
+<td>I am a procrastinator.</td>
+<td><center><input type="radio" name="c14" value="1"></center></td>
+<td><center><input type="radio" name="c14" value="2"></center></td>
+<td><center><input type="radio" name="c14" value="3"></center></td>
+<td><center><input type="radio" name="c14" value="4"></center></td>
+<td><center><input type="radio" name="c14" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of making time for my coursework. </td>
+<td><center><input type="radio" name="c15" value="5"></center></td>
+<td><center><input type="radio" name="c15" value="4"></center></td>
+<td><center><input type="radio" name="c15" value="3"></center></td>
+<td><center><input type="radio" name="c15" value="2"></center></td>
+<td><center><input type="radio" name="c15" value="1"></center></td>
+</tr>
+<tr>
+<td>I am able to balance many tasks at one time.</td>
+<td><center><input type="radio" name="c16" value="1"></center></td>
+<td><center><input type="radio" name="c16" value="2"></center></td>
+<td><center><input type="radio" name="c16" value="3"></center></td>
+<td><center><input type="radio" name="c16" value="4"></center></td>
+<td><center><input type="radio" name="c16" value="5"></center></td>
+</tr>
+<tr>
+<td>I am goal-oriented.</td>
+<td><center><input type="radio" name="c17" value="1"></center></td>
+<td><center><input type="radio" name="c17" value="2"></center></td>
+<td><center><input type="radio" name="c17" value="3"></center></td>
+<td><center><input type="radio" name="c17" value="4"></center></td>
+<td><center><input type="radio" name="c17" value="5"></center></td>
+</tr>
+<tr>
+<td>I am self-disciplined when it comes to my studies.</td>
+<td><center><input type="radio" name="c18" value="1"></center></td>
+<td><center><input type="radio" name="c18" value="2"></center></td>
+<td><center><input type="radio" name="c18" value="3"></center></td>
+<td><center><input type="radio" name="c18" value="4"></center></td>
+<td><center><input type="radio" name="c18" value="5"></center></td>
+</tr>
+<tr>
+<td>I am self-motivated.</td>
+<td><center><input type="radio" name="c19" value="1"></center></td>
+<td><center><input type="radio" name="c19" value="2"></center></td>
+<td><center><input type="radio" name="c19" value="3"></center></td>
+<td><center><input type="radio" name="c19" value="4"></center></td>
+<td><center><input type="radio" name="c19" value="5"></center></td>
+</tr>
+<tr>
+<td>I take responsibility for my learning.</td>
+<td><center><input type="radio" name="c20" value="1"></center></td>
+<td><center><input type="radio" name="c20" value="2"></center></td>
+<td><center><input type="radio" name="c20" value="3"></center></td>
+<td><center><input type="radio" name="c20" value="4"></center></td>
+<td><center><input type="radio" name="c20" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of critical thinking.</td>
+<td><center><input type="radio" name="c21" value="1"></center></td>
+<td><center><input type="radio" name="c21" value="2"></center></td>
+<td><center><input type="radio" name="c21" value="3"></center></td>
+<td><center><input type="radio" name="c21" value="4"></center></td>
+<td><center><input type="radio" name="c21" value="5"></center></td>
+</tr>
+</tbody></table>
+</div>
+
+
+<div id="dl">
+<table width="74%">
+	<tbody><tr valign="center">
+		<th align="left">Dependent Learning&nbsp;</th>
+		<th width="10%"><span class="agree-disagree">Strongly Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Neither Agree nor Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Agree</span></th>
+		<th width="10%"><span class="agree-disagree">Strongly Agree</span></th>
+	</tr>
+<tr>
+<td>I often leave tasks unfinished.</td>
+<td><center><input type="radio" name="c22" value="5"></center></td>
+<td><center><input type="radio" name="c22" value="4"></center></td>
+<td><center><input type="radio" name="c22" value="3"></center></td>
+<td><center><input type="radio" name="c22" value="2"></center></td>
+<td><center><input type="radio" name="c22" value="1"></center></td>
+</tr>
+<tr>
+<td>I require help to understand written instructions.</td>
+<td><center><input type="radio" name="c23" value="5"></center></td>
+<td><center><input type="radio" name="c23" value="4"></center></td>
+<td><center><input type="radio" name="c23" value="3"></center></td>
+<td><center><input type="radio" name="c23" value="2"></center></td>
+<td><center><input type="radio" name="c23" value="1"></center></td>
+</tr>
+<tr>
+<td>I wait until the last minute to work on assignments.</td>
+<td><center><input type="radio" name="c24" value="5"></center></td>
+<td><center><input type="radio" name="c24" value="4"></center></td>
+<td><center><input type="radio" name="c24" value="3"></center></td>
+<td><center><input type="radio" name="c24" value="2"></center></td>
+<td><center><input type="radio" name="c24" value="1"></center></td>
+</tr>
+<tr>
+<td>I have trouble comprehending what I read.</td>
+<td><center><input type="radio" name="c25" value="5"></center></td>
+<td><center><input type="radio" name="c25" value="4"></center></td>
+<td><center><input type="radio" name="c25" value="3"></center></td>
+<td><center><input type="radio" name="c25" value="2"></center></td>
+<td><center><input type="radio" name="c25" value="1"></center></td>
+</tr>
+<tr>
+<td>I need faculty to remind me of assignment due dates.</td>
+<td><center><input type="radio" name="c26" value="5"></center></td>
+<td><center><input type="radio" name="c26" value="4"></center></td>
+<td><center><input type="radio" name="c26" value="3"></center></td>
+<td><center><input type="radio" name="c26" value="2"></center></td>
+<td><center><input type="radio" name="c26" value="1"></center></td>
+</tr>
+<tr>
+<td>I need incentives/rewards to motivate me to complete a task.</td>
+<td><center><input type="radio" name="c27" value="5"></center></td>
+<td><center><input type="radio" name="c27" value="4"></center></td>
+<td><center><input type="radio" name="c27" value="3"></center></td>
+<td><center><input type="radio" name="c27" value="2"></center></td>
+<td><center><input type="radio" name="c27" value="1"></center></td>
+</tr>
+</tbody></table>
+</div>
+
+<div id="nfo">
+<table width="74%">
+	<tbody><tr valign="center">
+		<th align="left">Need for Online Learning</th>
+		<th width="10%"><span class="agree-disagree">Strongly Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Neither Agree nor Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Agree</span></th>
+		<th width="10%"><span class="agree-disagree">Strongly Agree</span></th>
+	</tr>
+<tr>
+<td>Because of my personal schedule, I need online courses.</td>
+<td><center><input type="radio" name="c28" value="1"></center></td>
+<td><center><input type="radio" name="c28" value="2"></center></td>
+<td><center><input type="radio" name="c28" value="3"></center></td>
+<td><center><input type="radio" name="c28" value="4"></center></td>
+<td><center><input type="radio" name="c28" value="5"></center></td>
+</tr>
+<tr>
+<td>It is difficult for me to go to campus to complete course requirements.</td>
+<td><center><input type="radio" name="c29" value="1"></center></td>
+<td><center><input type="radio" name="c29" value="2"></center></td>
+<td><center><input type="radio" name="c29" value="3"></center></td>
+<td><center><input type="radio" name="c29" value="4"></center></td>
+<td><center><input type="radio" name="c29" value="5"></center></td>
+</tr>
+<tr>
+<td>I need online courses because of my geographical distance from universities.</td>
+<td><center><input type="radio" name="c30" value="1"></center></td>
+<td><center><input type="radio" name="c30" value="2"></center></td>
+<td><center><input type="radio" name="c30" value="3"></center></td>
+<td><center><input type="radio" name="c30" value="4"></center></td>
+<td><center><input type="radio" name="c30" value="5"></center></td>
+</tr>
+<tr>
+<td>I need online courses because of my work schedule.</td>
+<td><center><input type="radio" name="c31" value="1"></center></td>
+<td><center><input type="radio" name="c31" value="2"></center></td>
+<td><center><input type="radio" name="c31" value="3"></center></td>
+<td><center><input type="radio" name="c31" value="4"></center></td>
+<td><center><input type="radio" name="c31" value="5"></center></td>
+</tr>
+<tr>
+<td>I need the freedom of completing coursework at the time and place of my choosing.</td>
+<td><center><input type="radio" name="c32" value="1"></center></td>
+<td><center><input type="radio" name="c32" value="2"></center></td>
+<td><center><input type="radio" name="c32" value="3"></center></td>
+<td><center><input type="radio" name="c32" value="4"></center></td>
+<td><center><input type="radio" name="c32" value="5"></center></td>
+</tr>
+</tbody></table>
+</div>
+<div id="as">
+<table width="74%" border="1" bordercolor="#000000">
+	<tbody><tr valign="center">
+		<th align="left">Academic Skills</th>
+		<th width="10%"><span class="agree-disagree">Strongly Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Neither Agree nor Disagree</span></th>
+		<th width="10%"><span class="agree-disagree">Agree</span></th>
+		<th width="10%"><span class="agree-disagree">Strongly Agree</span></th>
+	</tr>
+<tr>
+<td>I can learn by working independently.</td>
+<td><center><input type="radio" name="c33" value="1"></center></td>
+<td><center><input type="radio" name="c33" value="2"></center></td>
+<td><center><input type="radio" name="c33" value="3"></center></td>
+<td><center><input type="radio" name="c33" value="4"></center></td>
+<td><center><input type="radio" name="c33" value="5"></center></td>
+</tr>
+<tr>
+<td>I am self-directed in my learning.</td>
+<td><center><input type="radio" name="c34" value="1"></center></td>
+<td><center><input type="radio" name="c34" value="2"></center></td>
+<td><center><input type="radio" name="c34" value="3"></center></td>
+<td><center><input type="radio" name="c34" value="4"></center></td>
+<td><center><input type="radio" name="c34" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of solving problems alone.</td>
+<td><center><input type="radio" name="c35" value="1"></center></td>
+<td><center><input type="radio" name="c35" value="2"></center></td>
+<td><center><input type="radio" name="c35" value="3"></center></td>
+<td><center><input type="radio" name="c35" value="4"></center></td>
+<td><center><input type="radio" name="c35" value="5"></center></td>
+</tr>
+<tr>
+<td>I need face-to-face interaction to learn.</td>
+<td><center><input type="radio" name="c36" value="5"></center></td>
+<td><center><input type="radio" name="c36" value="4"></center></td>
+<td><center><input type="radio" name="c36" value="3"></center></td>
+<td><center><input type="radio" name="c36" value="2"></center></td>
+<td><center><input type="radio" name="c36" value="1"></center></td>
+</tr>
+<tr>
+<td>I need faculty feedback on my completed assignments.</td>
+<td><center><input type="radio" name="c37" value="5"></center></td>
+<td><center><input type="radio" name="c37" value="4"></center></td>
+<td><center><input type="radio" name="c37" value="3"></center></td>
+<td><center><input type="radio" name="c37" value="2"></center></td>
+<td><center><input type="radio" name="c37" value="1"></center></td>
+</tr>
+<tr>
+<td>I am a good reader.</td>
+<td><center><input type="radio" name="c38" value="1"></center></td>
+<td><center><input type="radio" name="c38" value="2"></center></td>
+<td><center><input type="radio" name="c38" value="3"></center></td>
+<td><center><input type="radio" name="c38" value="4"></center></td>
+<td><center><input type="radio" name="c38" value="5"></center></td>
+</tr>
+<tr>
+<td>I need classroom discussion to learn.</td>
+<td><center><input type="radio" name="c39" value="1"></center></td>
+<td><center><input type="radio" name="c39" value="2"></center></td>
+<td><center><input type="radio" name="c39" value="3"></center></td>
+<td><center><input type="radio" name="c39" value="4"></center></td>
+<td><center><input type="radio" name="c39" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of asking for help when I have a problem.</td>
+<td><center><input type="radio" name="c40" value="1"></center></td>
+<td><center><input type="radio" name="c40" value="2"></center></td>
+<td><center><input type="radio" name="c40" value="3"></center></td>
+<td><center><input type="radio" name="c40" value="4"></center></td>
+<td><center><input type="radio" name="c40" value="5"></center></td>
+</tr>
+<tr>
+<td>I am comfortable learning new skills.</td>
+<td><center><input type="radio" name="c41" value="1"></center></td>
+<td><center><input type="radio" name="c41" value="2"></center></td>
+<td><center><input type="radio" name="c41" value="3"></center></td>
+<td><center><input type="radio" name="c41" value="4"></center></td>
+<td><center><input type="radio" name="c41" value="5"></center></td>
+</tr>
+<tr>
+<td>I read carefully.</td>
+<td><center><input type="radio" name="c42" value="1"></center></td>
+<td><center><input type="radio" name="c42" value="2"></center></td>
+<td><center><input type="radio" name="c42" value="3"></center></td>
+<td><center><input type="radio" name="c42" value="4"></center></td>
+<td><center><input type="radio" name="c42" value="5"></center></td>
+</tr>
+<tr>
+<td>I am a good writer.</td>
+<td><center><input type="radio" name="c43" value="1"></center></td>
+<td><center><input type="radio" name="c43" value="2"></center></td>
+<td><center><input type="radio" name="c43" value="3"></center></td>
+<td><center><input type="radio" name="c43" value="4"></center></td>
+<td><center><input type="radio" name="c43" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of following written instructions.</td>
+<td><center><input type="radio" name="c44" value="1"></center></td>
+<td><center><input type="radio" name="c44" value="2"></center></td>
+<td><center><input type="radio" name="c44" value="3"></center></td>
+<td><center><input type="radio" name="c44" value="4"></center></td>
+<td><center><input type="radio" name="c44" value="5"></center></td>
+</tr>
+<tr>
+<td>I am capable of conveying my ideas in writing.</td>
+<td><center><input type="radio" name="c45" value="1"></center></td>
+<td><center><input type="radio" name="c45" value="2"></center></td>
+<td><center><input type="radio" name="c45" value="3"></center></td>
+<td><center><input type="radio" name="c45" value="4"></center></td>
+<td><center><input type="radio" name="c45" value="5"></center></td>
+</tr>
+
+<tr><td colspan="6"><center>
+	<input class="button" type="submit" name="submit" value="Get My Scores">
+	<input class="button" type="reset" name="resett" value="Reset">
+</center></td></tr>
+</tbody></table>
+</div>
+</form>
+
+<div id="results" style="display: none;">
+<center><h1>Your Personal Feedback for Online Learning Success</h1></center>
+
+<h3>Your overall score is <label id="ols_score">0</label>.</h3><br>
+
+<div id="ols_scale" class="score"><div class="bar"><div class="stick"></div></div></div>
+<br>
+
+<p>
+If your overall score is:
+</p>
+<ul>
+<li>
+ <b>190 - 201:</b> You're ready to go! <br>
+Individuals with a score in this range are more prepared for online learning than 50-75 percent of their student peers. 
+</li>
+<br>
+<li>
+ <b>178 - 189:</b> You're almost there! <br>
+Individuals with a score in this range may experience a little difficulty with taking online courses. Look through the statements again and identify which areas you think you may need help. Are you a procrastinator? Do you need some help learning some time management skills? Do you need a little help overcoming some technical hurdles? With a little effort, you could be ready to go! 
+<br>
+</li>
+<br>
+<li>
+ <b>0 - 177:</b> Proceed with caution. <br>
+Individuals with a score in this range may need to acquire some new skills before proceeding with online courses. You may need to increase your reading and writing skills, learn some time management skills, or take an introduction to computers course. Look over the statements again to identify the areas in which you need the most help and start there.
+</li>
+</ul>
+<h3>Your Computer Skills score is <label id="cs_score">0</label>.</h3>								
+<div id="cs_scale" class="score"><div class="bar"><div class="stick"></div></div></div>
+<br>
+<h3>Your Independent Learning  score is	<label id="il_score">0</label></h3>
+<div id="il_scale" class="score"><div class="bar"><div class="stick"></div></div></div>
+<br>
+<h3>Your Dependent Learning score is <label id="dl_score">0</label></h3>
+<div id="dl_scale" class="score"><div class="bar"><div class="stick"></div></div></div>
+<br>
+<h3>Your Academic Skills  score is <label id="as_score">0</label></h3>
+<div id="as_scale" class="score"><div class="bar"><div class="stick"></div></div></div>
+<br>
+<h3>Your Need for Online Delivery score is <label id="nfo_score">0</label></h3>
+
+<p>Unlike the other subscales, the  Need for Online Delivery  score identifies a need instead of a skill. If your score is <b>3.4</b> or higher, it indicates that   your lifestyle (i.e., career, family structure, personal responsibilities,   distance to higher education entities) may demand the flexibility   
+that the online classroom can provide. A score below <b>3.4</b> suggests that you do not  have a pressing need for online delivery of instruction. Online courses are just one of several options for you. </p>
+</div>
+
+<div id="footer">
+<p>
+Online Learning Readiness (derived from Amy Kuntz and Marcel Kerr)
+ <a href="mailto:marcel.kerr@tcu.edu">Dr. Marcel Kerr</a> of
+ TCU and UNTHSC School of Medicine and 
+ <a href="mailto:rynearson@tarleton.edu">Dr. Kimberly Rynearson</a>  of  Tarleton State University.</p>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+<script src="tools.js"></script>
+
+
+</body></html>
